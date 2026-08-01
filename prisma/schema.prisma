@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url   = env("SUPABASE_DB_URL")
+}
+
+model Profile {
+  id               String   @id
+  email            String
+  displayName      String?  @map("display_name")
+  avatarUrl        String?  @map("avatar_url")
+  plan             String   @default("free")
+  role             String   @default("user")
+  creditsRemaining Int      @default(5) @map("credits_remaining")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @map("updated_at")
+
+  projects       Project[]
+  messages       Message[]
+  builds         Build[]
+  payments       Payment[]
+  subscriptions  Subscription[]
+  marketplaceItems MarketplacePlugin[]
+  ratings        Rating[]
+  comments       Comment[]
+
+  @@map("profiles")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  prompt      String
+  description String?
+  options     Json     @default("{}")
+  spec        Json?
+  status      String   @default("draft")
+  difficulty  String   @default("standard")
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+
+  user        Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files       ProjectFile[]
+  messages    Message[]
+  builds      Build[]
+  marketplaceItem MarketplacePlugin?
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model ProjectFile {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  path      String
+  content   String   @default("")
+  language  String   @default("java")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path])
+  @@index([projectId])
+  @@map("project_files")
+}
+
+model Message {
+  id           String   @id @default(uuid())
+  projectId    String   @map("project_id")
+  userId       String   @map("user_id")
+  role         String
+  content      String
+  appliedChanges Json? @map("applied_changes")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("messages")
+}
+
+model Build {
+  id          String    @id @default(uuid())
+  projectId    String    @map("project_id")
+  userId       String    @map("user_id")
+  attempt      Int       @default(1)
+  status       String    @default("pending")
+  logs         String    @default("")
+  jarPath      String?   @map("jar_path")
+  zipPath     String?   @map("zip_path")
+  error       String?
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("builds")
+}
+
+model Payment {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
+  amount               Int
+  currency             String   @default("usd")
+  status               String   @default("pending")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Subscription {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
+  stripeCustomerId      String?   @map("stripe_customer_id")
+  status                String    @default("inactive")
+  plan                  String    @default("free")
+  currentPeriodEnd      DateTime? @map("current_period_end")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @map("updated_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  category    String
+  description String
+  prompt      String
+  options     Json     @default("{}")
+  icon        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([category])
+  @@map("templates")
+}
+
+model MarketplacePlugin {
+  id          String   @id @default(uuid())
+  projectId   String   @unique @map("project_id")
+  userId      String   @map("user_id")
+  title       String
+  description String
+  category    String
+  jarPath     String?  @map("jar_path")
+  downloads   Int      @default(0)
+  status      String   @default("published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user     Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings  Rating[]
+  comments Comment[]
+
+  @@index([category])
+  @@index([downloads])
+  @@map("marketplace_plugins")
+}
+
+model Rating {
+  id                  String   @id @default(uuid())
+  marketplacePluginId String   @map("marketplace_plugin_id")
+  userId              String   @map("user_id")
+  rating              Int
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  marketplacePlugin MarketplacePlugin @relation(fields: [marketplacePluginId], references: [id], onDelete: Cascade)
+  user              Profile           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([marketplacePluginId, userId])
+  @@map("ratings")
+}
+
+model Comment {
+  id                  String   @id @default(uuid())
+  marketplacePluginId String   @map("marketplace_plugin_id")
+  userId              String   @map("user_id")
+  content             String
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  marketplacePlugin MarketplacePlugin @relation(fields: [marketplacePluginId], references: [id], onDelete: Cascade)
+  user              Profile           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([marketplacePluginId])
+  @@map("comments")
+}
+
+model UsageCounter {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  date   DateTime @db.Date
+  count  Int    @default(0)
+
+  @@unique([userId, date])
+  @@map("usage_counters")
+}
