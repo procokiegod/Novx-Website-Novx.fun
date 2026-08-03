@@ -35,17 +35,12 @@ export function Navbar() {
               <Image
                 src="/brand/novx-logo.png"
                 alt="NOVX AI logo"
-                width={50}
-                height={50}
+                width={180}
+                height={60}
                 priority
-                className="h-full w-full object-contain p-1"
+                className="h-2 w-auto object-contain"
               />
             </div>
-
-            <span className="bg-gradient-to-r from-foreground via-cyan-300 to-violet-400 bg-clip-text text-lg font-bold tracking-tight text-transparent">
-              NOVX AI
-            </span>
-          </Link>
 
           <div className="hidden items-center gap-8 md:flex">
             {links.map((link) => (
