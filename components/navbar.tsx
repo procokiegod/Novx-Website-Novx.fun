@@ -31,12 +31,12 @@ export function Navbar() {
             className="group flex items-center gap-3"
             aria-label="NOVX AI home"
           >
-            <div className="transition-transform duration-200 group-hover:scale-105">
+            <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-cyan-400/20 bg-background/40 shadow-[0_0_22px_rgba(34,211,238,0.18)] transition-transform duration-200 group-hover:scale-105">
               <Image
                 src="/brand/novx-logo.png"
                 alt="NOVX AI logo"
-                width={60}
-                height={60}
+                width={50}
+                height={50}
                 priority
                 className="h-full w-full object-contain p-1"
               />
