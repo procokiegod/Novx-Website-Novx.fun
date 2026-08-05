@@ -35,8 +35,8 @@ export function Navbar() {
               <Image
                 src="/brand/novx-logo.png"
                 alt="NOVX AI logo"
-                width={180}
-                height={60}
+                width={45}
+                height={45}
                 priority
                 className="h-2 w-auto object-contain"
               />
